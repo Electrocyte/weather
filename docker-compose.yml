@@ -6,4 +6,4 @@ services:
         - ./config:/config
       environment:
         CONFIG_FILE: /config/config.toml
-      
+      restart: always
