@@ -1,4 +1,4 @@
-FROM arm64v8/python:3.7-alpine
+FROM resin/raspberrypi3-python:3.6
 
 WORKDIR /app
 
