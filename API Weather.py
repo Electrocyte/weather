@@ -39,8 +39,8 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
 
         WeatherAll['Rain[3h]'] = '0'
         WeatherAll['Rain[1h]'] = '0'
-#        WeatherAll['Snow[3h]'] = '0'
-#        WeatherAll['Snow[1h]'] = '0'
+        WeatherAll['Snow[3h]'] = '0'
+        WeatherAll['Snow[1h]'] = '0'
         WeatherAll['Visibility'] = '0'
         WeatherAll["Wind_direction"] = '0'
 
@@ -66,23 +66,23 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
 
         # Check if any snow data - if yes collect, if not ... moving on !
 #
-#        if "snow" in WeatherAll:
-#            for i in range(2):
-#                print("SNOW !!!")
-#
-#            if "3h" in WeatherAll["snow"]:
-#                Snow3hList = WeatherAll["snow"]["3h"]
-#                WeatherAll['Snow[3h]'] = Snow3hList
-#
-#                print("The heavens have opened in", CityStr,
-#                      ":", Snow3hList, "mm in the last 3h.")
-#
-#            if "1h" in WeatherAll["snow"]:
-#                Snow1hList = WeatherAll["snow"]["1h"]
-#                WeatherAll['Snow[1h]'] = Snow1hList
-#
-#                print("The heavens have opened in", CityStr,
-#                      ":", Snow1hList, "mm in the last 1h.")
+        if "snow" in WeatherAll:
+            for i in range(2):
+                print("SNOW !!!")
+
+            if "3h" in WeatherAll["snow"]:
+                Snow3hList = WeatherAll["snow"]["3h"]
+                WeatherAll['Snow[3h]'] = Snow3hList
+
+                print("The heavens have opened in", CityStr,
+                      ":", Snow3hList, "mm in the last 3h.")
+
+            if "1h" in WeatherAll["snow"]:
+                Snow1hList = WeatherAll["snow"]["1h"]
+                WeatherAll['Snow[1h]'] = Snow1hList
+
+                print("The heavens have opened in", CityStr,
+                      ":", Snow1hList, "mm in the last 1h.")
 
         # Check if any visibility data - if yes collect, if not ... moving on !
         try:
@@ -112,6 +112,8 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
             "UNIX_UTC":      [WeatherAll['dt']],
             "Rain[3h][mm]":  [WeatherAll["Rain[3h]"]],
             "Rain[1h][mm]":  [WeatherAll["Rain[1h]"]],
+            "Snow[3h][mm]":  [WeatherAll["Snow[3h]"]],
+            "Snow[1h][mm]":  [WeatherAll["Snow[1h]"]],
             "Min_temp":      [WeatherAll['main']["temp_min"]],
             "Max_temp":      [WeatherAll['main']["temp_max"]],
             "Temp":          [WeatherAll['main']["temp"]],
@@ -155,10 +157,10 @@ def load_config(file):
 def main():
     config_file = os.getenv('CONFIG_FILE', "config.toml")
     config = load_config(config_file)
-    schedule.every(30).seconds.do(current_weather, **config)
-#    schedule.every(2).hours.do(current_weather, api_key=config["api_key"])
-#    schedule.every(1).hour.do(current_weather, api_key=config["api_key"])
-    # schedule.every(30).minutes.do(current_weather, **config)
+#    schedule.every(30).seconds.do(current_weather, **config)
+#    schedule.every(2).hours.do(current_weather, **config)
+#    schedule.every(1).hour.do(current_weather, **config)
+    schedule.every(30).minutes.do(current_weather, **config)
 
     while True:
         schedule.run_pending()
