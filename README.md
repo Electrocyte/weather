@@ -8,12 +8,6 @@ Please refer to `example.toml` for an example configuration file.
 
 The script expects the configuration file to be at `config.toml` in the current directory. You can override it with the `CONFIG_FILE` environment variable.
 
-For example
-
-```bash
-CONFIG_FILE="/path/to/config.toml" "API Weather.py"
-```
-
 ## API key generation
 
 Make an account at [OpenWeatherMap](https://home.openweathermap.org/api_keys).
