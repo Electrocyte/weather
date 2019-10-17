@@ -7,11 +7,14 @@ from dateutil import tz
 import seaborn as sns; sns.set()
 import matplotlib.pyplot as plt
 from datetime import datetime, timezone
+import re
 
 # ================================================================================================
 #     Only edit these two variables
-DIRECTORY = "D:\\Enter\\sample\\load\\data\\directory\\"
-OUTPUT = "D:\\Enter\\sample\\save\\data\\directory\\"
+#DIRECTORY = "D:\\Enter\\sample\\load\\data\\directory\\"
+#OUTPUT = "D:\\Enter\\sample\\save\\data\\directory\\"
+DIRECTORY = "D:\\James\\Documents\\Python Scripts\\"
+OUTPUT = "D:\\James\\Documents\\Python Scripts\\"
 # ================================================================================================
 
 CITY_TZS = DIRECTORY+"CityTzs.csv"
@@ -46,7 +49,7 @@ cities_of_interest = [
 #     "Queenstown",
 #     "Quito",
 #     "Republic of Singapore",
-    "Rochecorbon",
+#    "Rochecorbon",
 #     "Saint-Geoire-en-Valdaine",
 #     "Sanya",
     "Singapore",
@@ -111,10 +114,10 @@ def time_columns(df, time__zone):
     df = df.sort_index()
 
 #     Calculate 2 days moving average
-    moving_2d_average = df[['Temp']]
-    moving_2d_average = moving_2d_average.rolling("2d").mean()
-    moving_2d_average = moving_2d_average.rename(index=str,columns={'Temp':"2d_MA_Temperature"})
-    df = pd.concat([df, moving_2d_average], axis=1)
+#    moving_2d_average = df[['Temp']]
+#    moving_2d_average = moving_2d_average.rolling("2d").mean()
+#    moving_2d_average = moving_2d_average.rename(index=str,columns={'Temp':"2d_MA_Temperature"})
+#    df = pd.concat([df, moving_2d_average], axis=1)
 
     return df
 
@@ -262,33 +265,71 @@ def plot_temperature_daily(df):
 
 # Mostly unused because spread given does not include outliers i.e. min-max
 
-def plot_temperature_moving_average(df):
+#def plot_temperature_moving_average(df):
+#
+#    year_month = df.groupby(['Year','Month'])
+#    CityStr = df["City"][0]
+#
+#    for (year, month), readings in year_month:
+#        days = list(readings['Day'].values)
+#
+#        fig, ax = plt.subplots(1, 1)
+##         ax = sns.lineplot(x='Day', y='2d_MA_Temperature', data=readings)
+#        df.plot(x="Time", y="Temp", ax=ax, label="Temperature")
+#        df.plot(x="Time", y="2d_MA_Temperature", ax=ax, label="2D_Moving Average")
+#
+#        ax.set_title('{} {}-{} \n Two Day Moving Average Temperature'.format(CityStr, year, month))
+#        ax.title.set_position([.5, 1.15])
+#        plt.xlabel('Day')
+#        plt.ylabel('Temperature (°C)')
+##         plt.ylim((0,40))
+#        plt.xlim((min(days), max(days)))
+#        plt.xlim((0, 31))
+#        plt.xticks(rotation=90)
+#        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), prop = {"size" : 7})
+#        plt.show()
 
-    year_month = df.groupby(['Year','Month'])
+def moving_average_5_day(df):
+    year_month_day = df.groupby(['Year','Month','Day'])
+    day_list = []
+    for (year, month, day), readings in year_month_day:
+        meanT = year_month_day['Temp'].mean()
+        day_list.append(day)
+    average_daily = meanT
+    new_df = pd.DataFrame()
+    new_df['Time'] = meanT.index.tolist()
+    new_df['Day'] = day_list
+    new_df['D_average_Temp'] = average_daily.tolist()
+    n = len(meanT) # total number of days in series
+    k = 5 # moving average number
+    for i in range(n-k+1):
+        meanT[i:i+k] = meanT[i:i+k].mean()
+    new_df[f'MA_{k}_Temp'] = meanT.tolist()
+#    new_df['MA_{k}_Temp'.format(k=k)] = meanT.tolist() # must use this jupyter for now
+    new_df.iloc[:, 3] = new_df.iloc[:, 3].shift(k)
+#    new_df = new_df.set_index('Time')
+    return new_df
+
+def plot_temperature_moving_average(df, meanT):
     CityStr = df["City"][0]
-
-    for (year, month), readings in year_month:
-        days = list(readings['Day'].values)
-
-        fig, ax = plt.subplots(1, 1)
-#         ax = sns.lineplot(x='Day', y='2d_MA_Temperature', data=readings)
-        df.plot(x="Time", y="Temp", ax=ax, label="Temperature")
-        df.plot(x="Time", y="2d_MA_Temperature", ax=ax, label="2D_Moving Average")
-
-        ax.set_title('{} {}-{} \n Two Day Moving Average Temperature'.format(CityStr, year, month))
-        ax.title.set_position([.5, 1.15])
-        plt.xlabel('Day')
-        plt.ylabel('Temperature (°C)')
-#         plt.ylim((0,40))
-        plt.xlim((min(days), max(days)))
-        plt.xlim((0, 31))
-        plt.xticks(rotation=90)
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), prop = {"size" : 7})
-        plt.show()
+    x = list((list(meanT))[i] for i in [3])
+    k = ''.join(re.findall(r'\d+', str(x)))
+    fig, ax = plt.subplots(1, 1)
+    meanT.plot(x="Time", y="D_average_Temp", ax=ax, label="Daily_Average")
+    meanT.plot(x="Time", y=f"MA_{k}_Temp", ax=ax, label=f"{k}Day_Moving Average")
+    ax.set_title('{} \n {} Day Moving Average Temperature'.format(CityStr, k))
+    ax.title.set_position([.5, 1.15])
+    plt.xlabel('Day')
+    plt.ylabel('Temperature (°C)')
+    plt.xticks(rotation=90)
+#    ax.set_xticklabels(meanT['Day'], rotation=90)
+    plt.ylim((-10, 35))
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), prop = {"size" : 7})
+    plt.show()
 
 #     graph setup
 barColour = colourMixer((1, 1, 1))
-font = {'family' : 'normal',
+font = {'family' : 'DejaVu Sans',
             'weight' : 'bold',
             'size'   : 22}
 
@@ -297,15 +338,19 @@ sns.set_context("notebook", font_scale=2.0, rc={"lines.linewidth": 2.5})
 
 files = load_dfs(DIRECTORY, cities_of_interest)
 
+
+
 #     Filename is not used BUT still need it because a dictionary item has a KEY and VALUE
 for _FileName, df in sorted(files.items()):
     city = df['City'][0]
     time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']
     df = time_columns(df, time__zone)
     min_max(df)
-    plot_humidity(df)
-    plot_humidity_mean(df)
-    plot_humidity_daily(df)
-    plot_temperature_mean(df)
+    move_av = moving_average_5_day(df)
+#    plot_humidity(df)
+#    plot_humidity_mean(df)
+#    plot_humidity_daily(df)
+#    plot_temperature_mean(df)
     plot_temperature_daily(df)
-    plot_temperature_moving_average(df)
+    plot_temperature_moving_average(df, move_av)
+#    plot_temperature_moving_average(df)

@@ -11,8 +11,8 @@ import glob
 
 # ================================================================================================
 #     Only edit these two variables
-DIRECTORY = "D:\\Enter\\sample\\load\\data\\directory\\"
-OUTPUT = "D:\\Enter\\sample\\save\\data\\directory\\"
+DIRECTORY = "D:/James/Documents/Python Scripts/Duplicate_NaN_Fix/"
+OUTPUT = "D:/James/Documents/Python Scripts/Duplicate_NaN_Fix/Fixed/"
 # ================================================================================================
 
 TAB_EXTENSION = ".tab"
