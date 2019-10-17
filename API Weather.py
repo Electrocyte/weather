@@ -12,7 +12,6 @@ import requests
 import pandas as pd
 from datetime import datetime
 from dateutil import tz
-from pathlib import Path
 import schedule
 import time
 import toml
@@ -32,6 +31,9 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
 
         WeatherAll['dtN'] = (datetime.utcfromtimestamp(
             WeatherAll['dt']).strftime('%Y-%m-%d %H:%M:%S'))
+        current_year = (datetime.utcfromtimestamp(
+            WeatherAll['dt']).strftime('%Y'))
+        
         CityStr = WeatherAll["name"]
         DescStr = WeatherAll['weather'][0]['description']
         IconStr = WeatherAll['weather'][0]['icon']
@@ -47,8 +49,7 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
         # Check if any rain data - if yes collect, if not ... moving on !
 
         if "rain" in WeatherAll:
-            for i in range(2):
-                print("RAIN !!!")
+            print(f"{CityStr} Rain")
 
             if "3h" in WeatherAll["rain"]:
                 Rain3hList = WeatherAll["rain"]["3h"]
@@ -67,8 +68,7 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
         # Check if any snow data - if yes collect, if not ... moving on !
 #
         if "snow" in WeatherAll:
-            for i in range(2):
-                print("SNOW !!!")
+            print(f"{CityStr} Snow")
 
             if "3h" in WeatherAll["snow"]:
                 Snow3hList = WeatherAll["snow"]["3h"]
@@ -128,10 +128,13 @@ def current_weather(api_key, Place_id, saveme, tab_extension):
 
         })
 
-        file_name = saveme+CityStr+tab_extension
-        my_file = Path(file_name)
+        # Files will be saved as <saveme>/<city>/<year>.<tab_extension>
+        folder_name = os.path.join(saveme, CityStr)
+        os.makedirs(folder_name, exist_ok=True) 
+        
+        file_name =  os.path.join(folder_name, f"{current_year}.{tab_extension}")
 
-        if my_file.is_file():
+        if os.path.isfile(file_name):
             weather.to_csv(file_name, sep='\t', mode='a', header=False)
         else:
             weather.to_csv(file_name, sep='\t')
