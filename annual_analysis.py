@@ -30,7 +30,7 @@ def time_columns(df, time__zone):
 #     Set index as a datetime
     df['New_time'] = pd.to_datetime(df['UNIX_UTC'], unit='s')
     df = df.set_index('New_time')
-    df = df.sort_index()
+    df = df.sort_index()        
 
     return df
 
@@ -60,7 +60,11 @@ def monthly_mean(i):
     city = i['City'][0]
     time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']
     
-    time_columns(i, time__zone)
+    i = time_columns(i, time__zone)
+    
+    # Find the "Year" with the most number of rows
+    year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
+    i = i[i["Year"] == year_to_keep]
     
     year_month = i.groupby(['Year','Month'])
     maxT = year_month['Temp'].max()
@@ -69,8 +73,8 @@ def monthly_mean(i):
     minT = minT.rename("minT")
     meanT = year_month['Temp'].mean()
     meanT = meanT.rename("meanT")
-    
-    print (meanT)
+
+    return meanT
 
 
 
@@ -78,16 +82,23 @@ if path.exists(old_bayonne):
     with open(old_bayonne) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)
         i = i.drop(['Unnamed: 0'], axis=1)
-        monthly_mean(i)
-        print (f'Mean temperature for {i.Year[0]} was {i.Temp.mean()}')
+        meanT = monthly_mean(i)
+        print (meanT)
+        print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
 
 for path_ in directory.rglob('*.tab'):
     with open(path_) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)
         i = i.drop(['Unnamed: 0'], axis=1)
-        monthly_mean(i)
-        print (f'Mean temperature for {i.Year[0]} was {i.Temp.mean()}')
+        meanT = monthly_mean(i)
 
+        # Find the "Year" with the most number of rows
+        year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
+        i = i[i["Year"] == year_to_keep]
+        
+        print (meanT)
+        print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
+#
 
 
 
