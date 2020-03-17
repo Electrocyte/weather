@@ -31,7 +31,6 @@ def time_columns(df, time__zone):
     df['New_time'] = pd.to_datetime(df['UNIX_UTC'], unit='s')
     df = df.set_index('New_time')
     df = df.sort_index()        
-
     return df
 
 
@@ -39,27 +38,26 @@ def formatTime(timestamp, t_format, city_timezone):
     utc = datetime.fromtimestamp(timestamp, timezone.utc)
     city_timezone = tz.gettz(city_timezone)
     return utc.astimezone(city_timezone).strftime(t_format)
+   
 
+def monthly_mean_ori(i):
+    city = i['City'][0]
+    time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']    
+    i = time_columns(i, time__zone)    
+    year_month = i.groupby(['Year','Month'])
+    maxT = year_month['Temp'].max()
+    maxT = maxT.rename("maxT")
+    minT = year_month['Temp'].min()
+    minT = minT.rename("minT")
+    meanT = year_month['Temp'].mean()
+    meanT = meanT.rename("meanT")
 
-#===============================================================================
-directory = "D:/James/Documents/SpiderOak Hive/Data/weather/new_system/Bayonne/"
-directory = Path(directory)
+    return meanT
 
-old = "D:/James/Documents/SpiderOak Hive/Data/weather/a_older_system/"
-old_bayonne = old+"Bayonne.tab"
-
-DIRECTORY = "D:\\James\\Documents\\Python Scripts\\"
-CITY_TZS = DIRECTORY+"CityTzs.csv"
-with open(CITY_TZS, 'r') as myfile:
-    CITY_TZS_FILE = pd.read_csv(CITY_TZS, index_col = "City_name")
-#===============================================================================    
-
-        
 
 def monthly_mean(i):
     city = i['City'][0]
-    time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']
-    
+    time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']   
     i = time_columns(i, time__zone)
     
     # Find the "Year" with the most number of rows
@@ -77,12 +75,25 @@ def monthly_mean(i):
     return meanT
 
 
+#===============================================================================
+directory = "D:/James/Documents/SpiderOak Hive/Data/weather/new_system/Bayonne/"
+directory = Path(directory)
+
+old = "D:/James/Documents/SpiderOak Hive/Data/weather/a_older_system/"
+old_bayonne = old+"Bayonne.tab"
+
+DIRECTORY = "D:\\James\\Documents\\Python Scripts\\"
+CITY_TZS = DIRECTORY+"CityTzs.csv"
+with open(CITY_TZS, 'r') as myfile:
+    CITY_TZS_FILE = pd.read_csv(CITY_TZS, index_col = "City_name")
+#===============================================================================    
+
 
 if path.exists(old_bayonne):
     with open(old_bayonne) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)
         i = i.drop(['Unnamed: 0'], axis=1)
-        meanT = monthly_mean(i)
+        meanT = monthly_mean_ori(i)
         print (meanT)
         print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
 
