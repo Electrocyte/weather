@@ -9,7 +9,7 @@ import pandas as pd
 from dateutil import tz
 import seaborn as sns; sns.set()
 from datetime import datetime, timezone
-#import os.path
+import matplotlib.pyplot as plt
 from os import path
 
 
@@ -41,9 +41,7 @@ def formatTime(timestamp, t_format, city_timezone):
    
 
 def monthly_mean_ori(i):
-    city = i['City'][0]
-    time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']    
-    i = time_columns(i, time__zone)    
+#
     year_month = i.groupby(['Year','Month'])
     maxT = year_month['Temp'].max()
     maxT = maxT.rename("maxT")
@@ -53,6 +51,22 @@ def monthly_mean_ori(i):
     meanT = meanT.rename("meanT")
 
     return meanT
+
+
+def split_df(i):
+    city = i['City'][0]
+    time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']    
+    i = time_columns(i, time__zone) 
+    mask = i['Year'] < 2019
+    
+    _2018 = i[mask]
+    _2019 = i[~mask]
+    
+    _2018_ = monthly_mean_ori(_2018)
+    _2019_ = monthly_mean_ori(_2019)
+    
+    return _2018_, _2019_, _2018, _2019
+
 
 
 def monthly_mean(i):
@@ -72,12 +86,17 @@ def monthly_mean(i):
     meanT = year_month['Temp'].mean()
     meanT = meanT.rename("meanT")
 
-    return meanT
+    return meanT, i
+
+
+def plot_precipitation():
+    
+
 
 
 #===============================================================================
 directory = "D:/James/Documents/SpiderOak Hive/Data/weather/new_system/Bayonne/"
-directory = Path(directory)
+directory_ = Path(directory)
 
 old = "D:/James/Documents/SpiderOak Hive/Data/weather/a_older_system/"
 old_bayonne = old+"Bayonne.tab"
@@ -93,15 +112,30 @@ if path.exists(old_bayonne):
     with open(old_bayonne) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)
         i = i.drop(['Unnamed: 0'], axis=1)
-        meanT = monthly_mean_ori(i)
-        print (meanT)
-        print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
+        
+        hack = "2019.tab"
+        with open(directory+hack) as f:
+            j = pd.read_csv(f, delimiter = "\t", index_col=None)
+            j = j.drop(['Unnamed: 0'], axis=1)
+            _, j_2019 = monthly_mean(j)
+        meanT_2018, meanT_2019, _2018, _2019 = split_df(i)
+        
+        frames = [_2019, j_2019]
+        _2019_merged = pd.concat(frames)
+        meanT_2019_new, j_2019_new = monthly_mean(_2019_merged)
+        
+        print (meanT_2018)
+        print (f'Mean temperature for period of {_2018.Month.unique()} in {_2018.Year.unique()} was {_2018.Temp.mean()}')
+        print (meanT_2019_new)
+        print (f'Mean temperature for period of {j_2019_new.Month.unique()} in {j_2019_new.Year.unique()} was {j_2019_new.Temp.mean()}')
 
-for path_ in directory.rglob('*.tab'):
+for path_ in directory_.rglob('*.tab'):
+    if path_.name == hack:
+        continue
     with open(path_) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)
         i = i.drop(['Unnamed: 0'], axis=1)
-        meanT = monthly_mean(i)
+        meanT, i = monthly_mean(i)
 
         # Find the "Year" with the most number of rows
         year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
@@ -109,34 +143,6 @@ for path_ in directory.rglob('*.tab'):
         
         print (meanT)
         print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
-#
-
-
-
-
-
-
-
-
-#for path in directory.rglob('*.tab'):
-#    with open(path) as f:
-#        i = pd.read_csv(f, delimiter = "\t", index_col=None)
-#        i = i.drop(['Unnamed: 0'], axis=1)
-#        city = i['City'][0]
-#        time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']
-#        
-#        time_columns(i, time__zone)
-#        
-#        year_month = i.groupby(['Year','Month'])
-#        maxT = year_month['Temp'].max()
-#        maxT = maxT.rename("maxT")
-#        minT = year_month['Temp'].min()
-#        minT = minT.rename("minT")
-#        meanT = year_month['Temp'].mean()
-#        meanT = meanT.rename("meanT")
-#        
-#        print (meanT)
-
 
 
 
