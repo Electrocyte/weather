@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from dateutil import tz
 import seaborn as sns; sns.set()
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import matplotlib.pyplot as plt
 from os import path
 
@@ -89,8 +89,21 @@ def monthly_mean(i):
     return meanT, i
 
 
-def plot_precipitation():
-    
+def plot_precipitation(df):
+    year_month_day = df.groupby(['Year','Month','Day'])
+    daily_max = year_month_day['Rain[1h][mm]'].sum()
+    daily_max = daily_max.reset_index()
+    daily_max['datetime'] = daily_max.apply(make_datetime, axis=1)    
+    cmap = sns.cubehelix_palette(dark=.3, light=.8, as_cmap=True)
+    ax = sns.scatterplot(x="datetime", y="Rain[1h][mm]", hue="Rain[1h][mm]", palette=cmap, data=daily_max)
+    ax.set_xticklabels(daily_max['Day'], rotation='vertical', fontsize=10)
+    plt.xlim(daily_max["datetime"].min(), daily_max["datetime"].max())
+    plt.ylim((0, daily_max["Rain[1h][mm]"].max()*1.1))
+    plt.show()
+
+
+def make_datetime(row):
+    return date(year=int(row['Year']), month=int(row['Month']), day=int(row['Day']))
 
 
 
@@ -128,6 +141,7 @@ if path.exists(old_bayonne):
         print (f'Mean temperature for period of {_2018.Month.unique()} in {_2018.Year.unique()} was {_2018.Temp.mean()}')
         print (meanT_2019_new)
         print (f'Mean temperature for period of {j_2019_new.Month.unique()} in {j_2019_new.Year.unique()} was {j_2019_new.Temp.mean()}')
+        plot_precipitation(j_2019_new)
 
 for path_ in directory_.rglob('*.tab'):
     if path_.name == hack:
