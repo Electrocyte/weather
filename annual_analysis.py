@@ -53,6 +53,27 @@ def monthly_mean_ori(i):
     return meanT
 
 
+def min_max(df):
+
+    year_month_day = df.groupby(['Year','Month','Day'])
+
+    maxT = year_month_day['Temp'].max()
+    maxT = maxT.rename("maxT")
+    minT = year_month_day['Temp'].min()
+    minT = minT.rename("minT")
+    meanT = year_month_day['Temp'].mean()
+    meanT = meanT.rename("meanT")
+    
+    day_df = pd.concat([minT, meanT, maxT], axis=1)
+    
+    tropical_nights = day_df[day_df["minT"] > 20]
+    year = df['Year'].iloc[-1]
+    hottest_night = tropical_nights['minT'].max()
+    print (f'Number of tropical nights (>20C) in {year}: {len(tropical_nights)}\nHottest night: {hottest_night}')
+    
+    return day_df
+
+
 def split_df(i):
     city = i['City'][0]
     time__zone = CITY_TZS_FILE.loc[city]['Time_Zone']    
