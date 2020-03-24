@@ -127,6 +127,18 @@ def make_datetime(row):
     return date(year=int(row['Year']), month=int(row['Month']), day=int(row['Day']))
 
 
+def plot_temperature(day_df):
+    day_df = day_df.reset_index()
+    day_df['datetime'] = day_df.apply(make_datetime, axis=1)
+    x = day_df['datetime'].values
+    y1 = day_df['minT'].values
+    y2 = day_df['maxT'].values
+    
+    fig, ax3 = plt.subplots(1, 1, sharex=True)
+    ax3.fill_between(x, y1, y2)
+
+
+
 
 #===============================================================================
 directory = "D:/James/Documents/SpiderOak Hive/Data/weather/new_system/Bayonne/"
@@ -178,7 +190,6 @@ for path_ in directory_.rglob('*.tab'):
         
         print (meanT)
         print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
-
 
 
 
