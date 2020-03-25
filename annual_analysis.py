@@ -137,8 +137,29 @@ def plot_temperature(df):
     y1 = day_df['minT'].values
     y2 = day_df['maxT'].values
     
+#    a = clean_df.index.values
+#    b1 = clean_df['TMIN_not_2015'].values
+#    b2 = clean_df['TMAX_not_2015'].values
+#    c1 = clean_df['record_low'].values
+#    c2 = clean_df['record_high'].values
+#    
+#    fig, ax1 = plt.subplots(1, 1, sharex=True, dpi = 300)
+#    
+##     plot minimum and maximum line colours
+#    plt.plot(a, b1, color = 'skyblue', linewidth=1)
+#    plt.plot(a, b2, color = 'darkred', linewidth=1)
+#    ax1.fill_between(a, b1, b2, color = 'black')
+#    plt.scatter(a, c1, color = 'blue', zorder = 10, label = 'Colder')
+#    plt.scatter(a, c2, color = 'red', zorder = 10, label = 'Hotter')
+#    ax1.set_ylabel('Temperature (celsius)', fontsize=20)
+#    ax1.set_xlabel('Days', fontsize=20)
+#    plt.title('Yakushima temperature extremes for 2015', fontsize=25)
+#    ax1.tick_params(axis='both', which='major', labelsize=15)
+#    plt.legend(loc=1, prop={'size': 15}, frameon = True, facecolor = 'lightgrey')
+    
+#    plot fill between
     fig, ax3 = plt.subplots(1, 1, sharex=True)
-    ax3.fill_between(x, y1, y2)
+    ax3.fill_between(x, y1, y2, color = "black")
     ax3.set_ylabel('Temperature (celsius)')
     ax3.set_xlabel('Month')
     plt.title(f'Daily temperature extremes for {city} {year}')
