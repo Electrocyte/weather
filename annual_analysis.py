@@ -127,7 +127,10 @@ def make_datetime(row):
     return date(year=int(row['Year']), month=int(row['Month']), day=int(row['Day']))
 
 
-def plot_temperature(day_df):
+def plot_temperature(df):
+    city = df['City'][0]
+    year = j_2019_new['Year'][0]
+    day_df = min_max(df)
     day_df = day_df.reset_index()
     day_df['datetime'] = day_df.apply(make_datetime, axis=1)
     x = day_df['datetime'].values
@@ -136,7 +139,9 @@ def plot_temperature(day_df):
     
     fig, ax3 = plt.subplots(1, 1, sharex=True)
     ax3.fill_between(x, y1, y2)
-
+    ax3.set_ylabel('Temperature (celsius)')
+    ax3.set_xlabel('Month')
+    plt.title(f'Daily temperature extremes for {city} {year}')
 
 
 
@@ -175,6 +180,7 @@ if path.exists(old_bayonne):
         print (meanT_2019_new)
         print (f'Mean temperature for period of {j_2019_new.Month.unique()} in {j_2019_new.Year.unique()} was {j_2019_new.Temp.mean()}')
         plot_precipitation(j_2019_new)
+        plot_temperature(j_2019_new)
 
 for path_ in directory_.rglob('*.tab'):
     if path_.name == hack:
