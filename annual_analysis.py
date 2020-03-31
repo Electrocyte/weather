@@ -193,7 +193,8 @@ if path.exists(old_bayonne):
         print (meanT_2019_new)
         print (f'Mean temperature for period of {j_2019_new.Month.unique()} in {j_2019_new.Year.unique()} was {j_2019_new.Temp.mean()}')
         plot_precipitation(j_2019_new)
-        plot_temperature(j_2019_new)
+#        plot_temperature(_2018)
+#        plot_temperature(j_2019_new)
 
 for path_ in directory_.rglob('*.tab'):
     if path_.name == hack:
@@ -209,6 +210,6 @@ for path_ in directory_.rglob('*.tab'):
         
         print (meanT)
         print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
-
+#        plot_temperature(i)
 
 
