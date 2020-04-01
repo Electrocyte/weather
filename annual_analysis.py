@@ -159,11 +159,13 @@ def plot_temperature(df):
 
 
 #===============================================================================
-directory = "D:/James/Documents/SpiderOak Hive/Data/weather/new_system/Bayonne/"
+INPUT_CITY = "Rochecorbon"
+
+directory = f"D:/James/Documents/SpiderOak Hive/Data/weather/new_system/{INPUT_CITY}/"
 directory_ = Path(directory)
 
 old = "D:/James/Documents/SpiderOak Hive/Data/weather/a_older_system/"
-old_bayonne = old+"Bayonne.tab"
+old_bayonne = f"{old}{INPUT_CITY}.tab"
 
 DIRECTORY = "D:\\James\\Documents\\Python Scripts\\"
 CITY_TZS = DIRECTORY+"CityTzs.csv"
