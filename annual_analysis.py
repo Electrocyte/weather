@@ -154,7 +154,7 @@ def plot_temperature(df):
     ax1.tick_params(axis='both', which='major', labelsize=15)
     
     plt.savefig(f'Daily temperature extremes for {city} {year}', bbox_inches='tight', dpi=300)
-
+    
 
 
 
