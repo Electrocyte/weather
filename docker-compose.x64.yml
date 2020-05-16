@@ -1,0 +1,11 @@
+version: "2.0"
+services:
+    weather:
+      build:
+        context: .
+        dockerfile: Dockerfile.x64
+      volumes:
+        - ./config:/config
+      environment:
+        CONFIG_FILE: /config/config.toml
+      restart: always
