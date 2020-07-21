@@ -120,6 +120,7 @@ def monthly_mean(i):
 def plot_precipitation(df):
     year_month_day = df.groupby(['Year','Month','Day'])
     daily_max = year_month_day['Rain[1h][mm]'].sum()
+    st.markdown(f"# Rainfall for {df.City.unique()[0]}")
     daily_max = daily_max.reset_index()
     daily_max['datetime'] = daily_max.apply(make_datetime, axis=1)    
     cmap = sns.cubehelix_palette(dark=.3, light=.8, as_cmap=True)
@@ -129,18 +130,6 @@ def plot_precipitation(df):
     plt.ylim((0, daily_max["Rain[1h][mm]"].max()*1.1))
     st.pyplot()
     plt.show()
-
-
-
-#def altair_plot_precipitation(df):
-#    year_month_day = df.groupby(['Year','Month','Day'])
-#    daily_max = year_month_day['Rain[1h][mm]'].sum()
-#    daily_max = daily_max.reset_index()
-#    daily_max['datetime'] = daily_max.apply(make_datetime, axis=1)    
-#    chart = (alt.Chart(daily_max).mark_circle().encode(x='datetime', y='Rain[1h][mm]',
-#    color='Origin'))
-#    st.altair_chart(chart)
-#    st.markdown(f"Drawing chart...")
 
 
 def make_datetime(row):
@@ -159,7 +148,8 @@ def plot_temperature(df):
     y2 = day_df['maxT'].values
     
     fig, ax1 = plt.subplots(1, 1, sharex=True, dpi = 300)
-    
+    plt.subplots_adjust(top=0.85,bottom=0.25)
+
 #     plot minimum and maximum line colours
     plt.plot(x, y1, color = 'skyblue', linewidth=1)
     plt.plot(x, y2, color = 'darkred', linewidth=1)
@@ -177,6 +167,7 @@ def plot_temperature(df):
 #===============================================================================
 INPUT_CITY = "Rochecorbon"
 
+data_folders = ["new_system", "output"]
 directory = f"/mnt/d/james/Documents/SpiderOak Hive/Data/weather/new_system/{INPUT_CITY}/"
 directory_ = Path(directory)
 
@@ -189,7 +180,7 @@ with open(CITY_TZS, 'r') as myfile:
     CITY_TZS_FILE = pd.read_csv(CITY_TZS, index_col = "City_name")
 #===============================================================================   
 
-st.write("# Weather charts for selected cities")
+st.write(f"# Weather charts for {INPUT_CITY}")
 
 
     
@@ -209,12 +200,27 @@ if path.exists(old_bayonne):
         _2019_merged = pd.concat(frames)
         meanT_2019_new, j_2019_new = monthly_mean(_2019_merged)
         
+        plot_precipitation(j_2019_new)
         
 #        st.markdown (f'{[x for x in meanT_2018.iteritems()]}')
-        st.markdown (f'Mean temperature for period of {_2018.Month.unique().min()}-{_2018.Month.unique().max()} in {_2018.Year.unique()} was {"%.1f" %_2018.Temp.mean()}')
+        st.markdown (f'Mean temperature for period of {_2018.Month.unique().min()}-{_2018.Month.unique().max()} in {_2018.Year.unique()} was {"%.1f" % _2018.Temp.mean()}')
+        plot_temperature(_2018)
 #        st.markdown (f'{[x for x in meanT_2019_new.iteritems()]}')
         st.markdown (f'Mean temperature for period of {j_2019_new.Month.unique().min()}-{j_2019_new.Month.unique().max()} in {j_2019_new.Year.unique()} was {"%.1f" % j_2019_new.Temp.mean()}')
-        plot_precipitation(j_2019_new)
-#        altair_plot_precipitation(j_2019_new)
-        plot_temperature(_2018)
         plot_temperature(j_2019_new)
+        
+for path_ in directory_.rglob('*.tab'):
+    if path_.name == hack:
+        continue
+    with open(path_) as f:
+        i = pd.read_csv(f, delimiter = "\t", index_col=None)
+        i = i.drop(['Unnamed: 0'], axis=1)
+        meanT, i = monthly_mean(i)
+
+        # Find the "Year" with the most number of rows
+        year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
+        i = i[i["Year"] == year_to_keep]
+        
+#        print (meanT)
+        st.markdown (f'Mean temperature for period of {i.Month.unique().min()}-{i.Month.unique().max()} in {i.Year.unique()} was {"%.1f" % i.Temp.mean()}')
+        plot_temperature(i)
