@@ -183,7 +183,7 @@ with open(CITY_TZS, 'r') as myfile:
 st.write(f"# Weather charts for {INPUT_CITY}")
 
 
-    
+@st.cache    
 if path.exists(old_bayonne):
     with open(old_bayonne) as f:
         i = pd.read_csv(f, delimiter = "\t", index_col=None)

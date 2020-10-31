@@ -159,10 +159,12 @@ def plot_temperature(df):
 
 
 #===============================================================================
-INPUT_CITY = "Rochecorbon"
+INPUT_CITY = "Bayonne"
 
-directory = f"D:/James/Documents/SpiderOak Hive/Data/weather/new_system/{INPUT_CITY}/"
-directory_ = Path(directory)
+directory = [f"D:/James/Documents/SpiderOak Hive/Data/weather/2019-2020/{INPUT_CITY}/", f"D:/James/Documents/SpiderOak Hive/Data/weather/2020-2020/{INPUT_CITY}/"]
+directory_list = [] 
+for _dir_ in directory:
+    directory_list.append(Path(_dir_))
 
 old = "D:/James/Documents/SpiderOak Hive/Data/weather/a_older_system/"
 old_bayonne = f"{old}{INPUT_CITY}.tab"
@@ -180,7 +182,7 @@ if path.exists(old_bayonne):
         i = i.drop(['Unnamed: 0'], axis=1)
         
         hack = "2019.tab"
-        with open(directory+hack) as f:
+        with open(directory[0]+hack) as f:
             j = pd.read_csv(f, delimiter = "\t", index_col=None)
             j = j.drop(['Unnamed: 0'], axis=1)
             _, j_2019 = monthly_mean(j)
@@ -198,20 +200,31 @@ if path.exists(old_bayonne):
 #        plot_temperature(_2018)
 #        plot_temperature(j_2019_new)
 
-for path_ in directory_.rglob('*.tab'):
-    if path_.name == hack:
-        continue
-    with open(path_) as f:
-        i = pd.read_csv(f, delimiter = "\t", index_col=None)
-        i = i.drop(['Unnamed: 0'], axis=1)
-        meanT, i = monthly_mean(i)
-
-        # Find the "Year" with the most number of rows
-        year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
-        i = i[i["Year"] == year_to_keep]
+i_s = []
+for directory_ in directory_list:
+    for path_ in directory_.rglob('*.tab'):
+        if path_.name == hack:
+            continue
+        with open(path_) as f:
+            i = pd.read_csv(f, delimiter = "\t", index_col=None)
+            i = i.drop(['Unnamed: 0'], axis=1)
+            meanT, i = monthly_mean(i)
+    
+            # Find the "Year" with the most number of rows
+            year_to_keep = i.groupby(['Year'])["Year"].count().idxmax()
+            i = i[i["Year"] == year_to_keep]
+#            print(path_)
+            i_s.append(i)
+#            print (meanT)
+#            print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
+#            plot_temperature(i)
+aggregate_i = pd.concat(i_s)
+meanT, i = monthly_mean(aggregate_i)
+print (meanT)
+print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
+plot_temperature(aggregate_i)
+plot_precipitation(aggregate_i)       
         
-        print (meanT)
-        print (f'Mean temperature for period of {i.Month.unique()} in {i.Year.unique()} was {i.Temp.mean()}')
-#        plot_temperature(i)
+        
 
 

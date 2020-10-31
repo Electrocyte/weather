@@ -53,7 +53,7 @@ cities_of_interest = [
 #     "Quito",
 #     "Republic of Singapore",
 #    "Rochecorbon",
-    "R_2019", "R_2020",
+#    "R_2019", "R_2020",
 #     "Saint-Geoire-en-Valdaine",
 #     "Sanya",
 #    "Singapore",
