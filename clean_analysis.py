@@ -108,6 +108,7 @@ city = ["Boston"]
 city = ["Perpignan"]
 city = ["Saint-Geoire-en-Valdaine"]
 city = ["Singapore"]
+city = ["San Diego"]
 
 globs = []
 for citi in city:
@@ -143,7 +144,7 @@ def plot_temperature(df):
     y2 = day_df['maxT'].values
     
     f, ax = plt.subplots(figsize=(25, 15))
-
+    # ax.set_ylim([0, 40])
     plt.plot(x, y1, color = 'skyblue', linewidth=1)
     plt.plot(x, y2, color = 'darkred', linewidth=1)
     ax.fill_between(x, y1, y2, color = 'black')
