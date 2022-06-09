@@ -12,6 +12,7 @@ from dateutil import tz
 import seaborn as sns; sns.set()
 from datetime import date, datetime, timezone
 import matplotlib.pyplot as plt
+import datetime as dt
 from os import path
 import math
 import glob
@@ -87,9 +88,13 @@ def min_max(df):
     day_df = pd.concat([minT, meanT, maxT], axis=1)
     
     tropical_nights = day_df[day_df["minT"] > 20]
-    year = df['Year'].iloc[-1]
-    hottest_night = tropical_nights['minT'].max()
-    print (f'Number of tropical nights (>20C) in {year}: {len(tropical_nights)}\nHottest night: {hottest_night}')
+    tropical_nights.reset_index(inplace = True)
+    no_trop_nights = tropical_nights.groupby(["Year"])["minT"].count().rename("no. tropical nights")
+    hottest_night = tropical_nights.groupby(["Year"])["minT"].max().rename("hottest-night")
+    heat = pd.concat([hottest_night, no_trop_nights], axis = 1)
+    
+    for n, value in enumerate(list(heat.index)):
+        print(f"Year: {value}, No. tropical nights (>20C): {int(heat.iloc[n]['no. tropical nights'])}, hottest night: {heat.iloc[n]['hottest-night']}")
     
     return day_df
 
@@ -103,12 +108,13 @@ def make_datetime(row):
 directory = "E:/weather/new/"
 
 city = ["Bayonne"]
-city = ["Penvenan","Penvénan"]
-city = ["Boston"]
-city = ["Perpignan"]
-city = ["Saint-Geoire-en-Valdaine"]
-city = ["Singapore"]
-city = ["San Diego"]
+# city = ["Penvenan","Penvénan"]
+# city = ["Boston"]
+# city = ["Perpignan"]
+# city = ["Saint-Geoire-en-Valdaine"]
+# city = ["Singapore"]
+# city = ["San Diego"]
+timezone___ = f"Europe/{city}"
 
 globs = []
 for citi in city:
@@ -128,8 +134,51 @@ cat_df = cat_df.drop(['Unnamed: 0'], axis = 1)
 cat_df = cat_df.drop_duplicates(["City", "UNIX_UTC"])
 cat_df.reset_index(inplace = True, drop = True)
 
-mean_monthly_df, sub_df = monthly_mean(cat_df, f"Europe/{city}")
+cat_df["simpleTime"] = cat_df["Time"].str.split(" ", expand = True)[0]
+
+mean_monthly_df, cat_df = monthly_mean(cat_df, timezone___)
+cat_df.reset_index(inplace = True)
+
+time_diffs = pd.DataFrame(cat_df["UNIX_UTC"].diff())
+gaps = time_diffs.loc[time_diffs["UNIX_UTC"] > 86400]
+
+############ SIMPLE INTERPOLATION ############
+
+all_times = cat_df["New_time"].reindex(pd.date_range(start = cat_df["New_time"].min(), end = cat_df["New_time"].max(), freq='30min'))
+all_times = pd.DataFrame(all_times)
+all_times.reset_index(inplace = True)
+all_times = all_times.drop(["New_time"], axis = 1)
+
+gap_pairs = [(i-1, i) for i in gaps.index]
+all_missing_times = []
+for pair in gap_pairs:
+    before = cat_df.iloc[list(pair)[0]]["New_time"]
+    after = cat_df.iloc[list(pair)[1]]["New_time"]
+    delta = after - before
+    missing_timepoints = all_times.loc[(all_times["index"] > before) & (all_times["index"] < after)]
+    missing_timepoints["UNIX_UTC"] = missing_timepoints['index'].astype('int64')//1e9
+    all_missing_times .append ( missing_timepoints)
+cat_miss_times = pd.concat(all_missing_times)
+cat_miss_times = cat_miss_times.rename(columns={"index": "New_time"})
+cat_miss_times = cat_miss_times.set_index(["UNIX_UTC"])
+cat_df2 = cat_df.set_index(["UNIX_UTC"])
+
+interpolated_df = pd.concat([cat_df2, cat_miss_times])
+interpolated_df = interpolated_df.sort_index(ascending=True)
+interpolated_df.reset_index(inplace = True)
+
+for col in interpolated_df.columns:
+    interpolated_df[col] = interpolated_df[col].interpolate()
+    # interpolated_df[col] = interpolated_df[col].interpolate(method = "time")
+
+interpolated_df = time_columns(interpolated_df, timezone___)
+interpolated_df["City"] = citi
+
+############ SIMPLE INTERPOLATION ############
+
 days_w_data = check_days_with_data(cat_df)
+days_w_data = check_days_with_data(interpolated_df)
+
 
 
 def plot_temperature(df):
@@ -156,8 +205,8 @@ def plot_temperature(df):
     ax.tick_params(axis='both', which='major', labelsize=25)
 
 
-plot_temperature(sub_df)
-
+plot_temperature(cat_df)
+plot_temperature(interpolated_df)
 
 
 
