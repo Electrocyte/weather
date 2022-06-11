@@ -175,10 +175,43 @@ interpolated_df = time_columns(interpolated_df, timezone___)
 interpolated_df["City"] = citi
 
 ############ SIMPLE INTERPOLATION ############
+############ similar time INTERPOLATION ############
+
+cat_miss_times["no-year"] = cat_miss_times["New_time"].astype(str).str.replace(r"\d\d\d\d-", "")
+cat_miss_times.reset_index(inplace=True)
+cat_miss_times = time_columns(cat_miss_times, timezone___)
+missing_dates = cat_miss_times[['UNIX_UTC', 'Month', 'Day', 'Hour']]
+
+def find_other_readings(row):
+    
+    within_one_hour = cat_df2.loc[(cat_df2['Month'] == row["Month"]) & (cat_df2['Day'] == row["Day"]) & (cat_df2['Hour'] == row["Hour"])]
+    
+    row["Temp"] = within_one_hour["Temp"].mean()
+    row["Max_temp"] = within_one_hour["Temp"].max()
+    row["Min_temp"] = within_one_hour["Temp"].min()
+    row["std"] = within_one_hour["Temp"].std()
+    
+    return row
+
+gg = missing_dates.apply(find_other_readings, axis = 1)
+gg.reset_index(inplace = True)
+gg = gg.set_index(["UNIX_UTC"])
+
+mean_prev_year_df = pd.concat([cat_df2, gg[['New_time','Min_temp', 'Max_temp', 'Temp']]])
+mean_prev_year_df = mean_prev_year_df.sort_index(ascending=True)
+mean_prev_year_df.reset_index(inplace = True)
+
+for col in mean_prev_year_df.columns:
+    mean_prev_year_df[col] = mean_prev_year_df[col].interpolate()
+
+mean_prev_year_df = time_columns(mean_prev_year_df, timezone___)
+mean_prev_year_df["City"] = citi
+
+############ similar time INTERPOLATION ############
 
 days_w_data = check_days_with_data(cat_df)
 days_w_data = check_days_with_data(interpolated_df)
-
+days_w_data = check_days_with_data(mean_prev_year_df)
 
 
 def plot_temperature(df):
@@ -207,8 +240,7 @@ def plot_temperature(df):
 
 plot_temperature(cat_df)
 plot_temperature(interpolated_df)
-
-
+plot_temperature(mean_prev_year_df)
 
 
 
