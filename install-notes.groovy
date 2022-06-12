@@ -22,5 +22,7 @@ pipenv shell
 pipenv shell
 jupyter-notebook
 
-pip install --upgrade pipenv
-pipenv install git+https://github.com/statsmodels/statsmodels#egg=statsmodels
+# separate installation per computer
+pipenv shell
+pipenv install
+python -m pip install git+https://github.com/statsmodels/statsmodels
