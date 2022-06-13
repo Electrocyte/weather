@@ -306,6 +306,7 @@ plt.show()
 stl_kwargs = {"seasonal_deg": 0} 
 
 # model = MSTL(data_MSTL, periods=(24, 24 * 365), stl_kwargs=stl_kwargs)
+# https://arxiv.org/pdf/2107.13462.pdf
 model = MSTL(data_MSTL, periods=(24, 24 * 28), stl_kwargs=stl_kwargs)
 
 res = model.fit()
@@ -318,3 +319,8 @@ fig = res.plot()
 plt.tight_layout()
 plt.savefig(f"MSTL-plot.png", dpi = 300)
 plt.show()
+
+seasonal_components = res.seasonal
+seasonal_trend = res.trend
+seasonal_resid = res.resid
+print(seasonal_components, seasonal_trend, seasonal_resid)
