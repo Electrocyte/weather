@@ -22,6 +22,11 @@ pipenv shell
 pipenv shell
 jupyter-notebook
 
+OR
+
+cd weather/
+code .
+
 # separate installation per computer
 pipenv shell
 pipenv install
