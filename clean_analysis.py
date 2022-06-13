@@ -279,6 +279,28 @@ print(shapiro_test.statistic, shapiro_test.pvalue)
 # https://www.statisticshowto.com/box-cox-transformation/
 # Normality is an important assumption for many statistical techniques; 
 # if your data isn’t normal, applying a Box-Cox means that you are able to run a broader number of tests.
+xt, lmbda = stats.yeojohnson(data_MSTL)
+print(power_transform(data_MSTL["Temp"].values.reshape(-1, 1), method='yeo-johnson', standardize = False))
+xts = power_transform(data_MSTL["Temp"].values.reshape(-1, 1), method='yeo-johnson')
+shapiro_test = stats.shapiro(xt)
+print(shapiro_test.statistic, shapiro_test.pvalue)
+
+comparison = pd.concat([data_MSTL, pd.DataFrame(xt, index = data_MSTL.index).rename(columns={0: "stats-non-standardised"}), pd.DataFrame(xts, index = data_MSTL.index).rename(columns={0: "standardised"})], axis = 1)
+
+fig = plt.figure()
+ax1 = fig.add_subplot(221)
+prob = stats.probplot(comparison["Temp"], dist=stats.norm, plot=ax1)
+ax1.set_xlabel('')
+ax1.set_title('Probplot against normal distribution')
+
+ax2 = fig.add_subplot(222)
+prob = stats.probplot(comparison["stats-non-standardised"], dist=stats.norm, plot=ax2)
+ax2.set_title('Probplot after Yeo-Johnson transformation')
+
+ax3 = fig.add_subplot(223)
+prob = stats.probplot(comparison["standardised"], dist=stats.norm, plot=ax3)
+ax3.set_title('Probplot after Yeo-Johnson transformation, standardised')
+plt.show()
 
 # seasonal_deg, the polynomial degree used by Loess to extract the seasonal component in STL (typically set to 0 or 1).
 stl_kwargs = {"seasonal_deg": 0} 
