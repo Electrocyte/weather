@@ -249,8 +249,9 @@ only_june = only_2019.loc[only_2019["Month"] == 6]
 from statsmodels.tsa.seasonal import MSTL
 pd.plotting.register_matplotlib_converters()
 
-data_MSTL = pd.DataFrame(data=mean_prev_year_df["Temp"], index=mean_prev_year_df.index)
+data_MSTL = pd.DataFrame(data=only_2019["Temp"], index=only_2019.index)
 
+# seasonal_deg, the polynomial degree used by Loess to extract the seasonal component in STL (typically set to 0 or 1).
 stl_kwargs = {"seasonal_deg": 0} 
 
 # model = MSTL(data_MSTL, periods=(24, 24 * 365), stl_kwargs=stl_kwargs)
