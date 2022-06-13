@@ -8,7 +8,7 @@ pandas = "*"
 jupyter = "*"
 seaborn = "*"
 matplotlib = "*"
-statsmodels = "*"
+# statsmodels = {git = "https://github.com/statsmodels/statsmodels"}
 
 [dev-packages]
 

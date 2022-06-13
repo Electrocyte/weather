@@ -105,7 +105,7 @@ def make_datetime(row):
 
 #################################
 
-directory = "E:/weather/new/"
+directory = "/mnt/e/weather/new/"
 
 city = ["Bayonne"]
 # city = ["Penvenan","Penvénan"]
@@ -167,7 +167,7 @@ interpolated_df = pd.concat([cat_df2, cat_miss_times])
 interpolated_df = interpolated_df.sort_index(ascending=True)
 interpolated_df.reset_index(inplace = True)
 
-for col in interpolated_df.columns:
+for col in ['Min_temp', 'Max_temp', 'Temp']:
     interpolated_df[col] = interpolated_df[col].interpolate()
     # interpolated_df[col] = interpolated_df[col].interpolate(method = "time")
 
@@ -201,7 +201,7 @@ mean_prev_year_df = pd.concat([cat_df2, gg[['New_time','Min_temp', 'Max_temp', '
 mean_prev_year_df = mean_prev_year_df.sort_index(ascending=True)
 mean_prev_year_df.reset_index(inplace = True)
 
-for col in mean_prev_year_df.columns:
+for col in ['Min_temp', 'Max_temp', 'Temp']:
     mean_prev_year_df[col] = mean_prev_year_df[col].interpolate()
 
 mean_prev_year_df = time_columns(mean_prev_year_df, timezone___)
@@ -243,8 +243,26 @@ plot_temperature(interpolated_df)
 plot_temperature(mean_prev_year_df)
 
 
+only_2019 = mean_prev_year_df.loc[mean_prev_year_df["Year"] == 2019]
+only_june = only_2019.loc[only_2019["Month"] == 6]
 
+from statsmodels.tsa.seasonal import MSTL
+pd.plotting.register_matplotlib_converters()
 
+data_MSTL = pd.DataFrame(data=mean_prev_year_df["Temp"], index=mean_prev_year_df.index)
 
+stl_kwargs = {"seasonal_deg": 0} 
 
+# model = MSTL(data_MSTL, periods=(24, 24 * 365), stl_kwargs=stl_kwargs)
+model = MSTL(data_MSTL, periods=(24, 24 * 28), stl_kwargs=stl_kwargs)
 
+res = model.fit()
+
+# Start with the plot from the results object `res`
+plt.rc("figure", figsize=(16, 20))
+plt.rc("font", size=13)
+fig = res.plot()
+
+plt.tight_layout()
+plt.savefig(f"MSTL-plot.png", dpi = 300)
+plt.show()
