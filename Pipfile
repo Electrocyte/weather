@@ -9,6 +9,7 @@ jupyter = "*"
 seaborn = "*"
 matplotlib = "*"
 # statsmodels = {git = "https://github.com/statsmodels/statsmodels"}
+sklearn = "*"
 
 [dev-packages]
 

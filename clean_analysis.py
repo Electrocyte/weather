@@ -249,7 +249,36 @@ only_june = only_2019.loc[only_2019["Month"] == 6]
 from statsmodels.tsa.seasonal import MSTL
 pd.plotting.register_matplotlib_converters()
 
+import statsmodels.api as sm
+from scipy.stats import norm
+import pylab
+
 data_MSTL = pd.DataFrame(data=only_2019["Temp"], index=only_2019.index)
+
+# qq plot
+# normal distribution for qq plot looks like a linear plot 
+# https://towardsdatascience.com/6-ways-to-test-for-a-normal-distribution-which-one-to-use-9dcf47d8fa93 
+sm.qqplot(data_MSTL, line='45')
+pylab.show()
+
+# Kolmogorov Smirnov test
+    # If the P-Value of the KS Test is larger than 0.05, we assume a normal distribution
+    # If the P-Value of the KS Test is smaller than 0.05, we do not assume a normal distribution
+from scipy.stats import kstest, norm
+ks_statistic, p_value = kstest(data_MSTL, 'norm')
+print(ks_statistic, p_value)
+
+# Shapiro Wilk test # best test
+    # If the P-Value of the Shapiro Wilk Test is larger than 0.05, we assume a normal distribution
+    # If the P-Value of the Shapiro Wilk Test is smaller than 0.05, we do not assume a normal distribution
+from scipy import stats
+shapiro_test = stats.shapiro(data_MSTL)
+print(shapiro_test.statistic, shapiro_test.pvalue)
+
+# if the data is present in non-normal shape (which it is), it can be transformed into a normal distribution using the box cox
+# https://www.statisticshowto.com/box-cox-transformation/
+# Normality is an important assumption for many statistical techniques; 
+# if your data isn’t normal, applying a Box-Cox means that you are able to run a broader number of tests.
 
 # seasonal_deg, the polynomial degree used by Loess to extract the seasonal component in STL (typically set to 0 or 1).
 stl_kwargs = {"seasonal_deg": 0} 
