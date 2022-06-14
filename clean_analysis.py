@@ -551,6 +551,7 @@ test_shifted.head(5)
 %%time
 training_window = 720 # dedicate 30 days (720 hours) for training
 # probably needs editing for my data where 48 x no. days
+# this model needs optimising for number of iterations... taking too long to run or whatever.
 
 train_ts = train['Temp']
 test_ts = test_shifted
@@ -560,9 +561,12 @@ history = history[(-training_window):]
 
 predictions = list()
 
-order = (2, 1, 0)
-seasonal_order = (1, 1, 0, 24)
+order = (4, 1, 0) # p, d, q
+seasonal_order = (1, 1, 0, 48) # P, D, Q, s
 
+# why is this the same size as the data set.
+# might be required due to 
+# ValueError: Length of values (1690) does not match length of index (446)
 for t in range(test_ts.shape[0]):
     model = SARIMAX(endog=history, order=order, seasonal_order=seasonal_order)
     model_fit = model.fit()
