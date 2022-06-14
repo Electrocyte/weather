@@ -17,6 +17,8 @@ from os import path
 import math
 import glob
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore") # specify to ignore warning messages
 
 
 def formatTime(timestamp, t_format, city_timezone):
@@ -245,6 +247,8 @@ plot_temperature(mean_prev_year_df)
 
 only_2019 = mean_prev_year_df.loc[mean_prev_year_df["Year"] == 2019]
 only_june = only_2019.loc[only_2019["Month"] == 6]
+two_weeks = only_june.loc[only_june["Day"] .isin (range(1,14))]
+one_day = only_june.loc[only_june["Day"] .isin ([1])]
 
 from statsmodels.tsa.seasonal import MSTL
 pd.plotting.register_matplotlib_converters()
@@ -279,6 +283,7 @@ print(shapiro_test.statistic, shapiro_test.pvalue)
 # https://www.statisticshowto.com/box-cox-transformation/
 # Normality is an important assumption for many statistical techniques; 
 # if your data isn’t normal, applying a Box-Cox means that you are able to run a broader number of tests.
+from sklearn.preprocessing import power_transform
 xt, lmbda = stats.yeojohnson(data_MSTL)
 print(power_transform(data_MSTL["Temp"].values.reshape(-1, 1), method='yeo-johnson', standardize = False))
 xts = power_transform(data_MSTL["Temp"].values.reshape(-1, 1), method='yeo-johnson')
@@ -323,4 +328,259 @@ plt.show()
 seasonal_components = res.seasonal
 seasonal_trend = res.trend
 seasonal_resid = res.resid
-print(seasonal_components, seasonal_trend, seasonal_resid)
+print(seasonal_components)
+print(seasonal_trend)
+print(seasonal_resid)
+
+# check for stationarity
+# Since the p-value is not less than .05, we fail to reject the null hypothesis.
+# This means the time series is non-stationary. 
+# In other words, it has some time-dependent structure and does not have constant variance over time.
+# H0: The time series is non-stationary. 
+# HA: The time series is stationary.
+# 0.006 < 0.05; reject H0
+# However, this is misleading and may be removed if we look at a daily basis
+from statsmodels.tsa.stattools import adfuller
+adfuller(xts) # Test-stat = -3.557; p-value = 0.0066
+adfuller(xt)  # Test-stat = -3.557; p-value = 0.0066
+adfuller(data_MSTL["Temp"]) #  Test-stat = -3.514; p-value = 0.0076 --> REJECT i.e. stationary
+adfuller(only_2019["Temp"]) #  Test-stat = -3.514; p-value = 0.0076 --> REJECT i.e. stationary
+adfuller(only_june["Temp"]) #  Test-stat = -3.049; p-value = 0.0306 --> REJECT i.e. stationary
+adfuller(two_weeks["Temp"]) #  Test-stat = -2.789; p-value = 0.0598 --> ACCEPT i.e. non-stationary
+adfuller(one_day["Temp"])   #  Test-stat = -2.350; p-value = 0.1563 --> ACCEPT i.e. non-stationary
+# Observations from a non-stationary time series show seasonal effects, trends, and other structures that depend on the time index.
+# Summary statistics like the mean and variance do change over time, providing a drift in the concepts a model may try to capture.
+# Classical time series analysis and forecasting methods are concerned with making non-stationary time series data stationary by identifying and removing trends and removing stationary effects.
+
+
+#####################
+# If you have clear trend and seasonality in your time series, then model these components, remove them from observations, then train models on the residuals.
+
+## DIFFERENCING TO REMOVE (LINEAR) TRENDS.
+# How to apply the difference transform to remove a linear trend from a series.
+# A trend makes a time series non-stationary by increasing the level. This has the effect of varying the mean time series value over time.
+# create a differenced series
+# 48 = readings summing to one day (if every 30 minutes)
+def difference(dataset, interval=1):
+	diff = list()
+	for i in range(interval, len(dataset)):
+		value = dataset[i] - dataset[i - interval]
+		diff.append(value)
+	return diff
+
+
+# invert differenced forecast
+def inverse_difference(last_ob, value):
+	return value + last_ob
+ 
+
+diff_trend_day = difference(two_weeks['Temp'], 48)
+inverted = [inverse_difference(two_weeks['Temp'][i], diff_trend_day[i]) for i in range(len(diff_trend_day))]
+
+## Differencing to Remove Seasonality
+# How to apply the difference transform to remove a seasonal signal from a series.
+# Seasonal variation, or seasonality, are cycles that repeat regularly over time.
+
+from math import sin
+from math import radians
+from matplotlib import pyplot
+
+
+# create a differenced series
+def difference(dataset, interval=1):
+	diff = list()
+	for i in range(interval, len(dataset)):
+		value = dataset[i] - dataset[i - interval]
+		diff.append(value)
+	return diff
+
+
+# invert differenced forecast
+def inverse_difference(last_ob, value):
+	return value + last_ob
+
+
+# difference the dataset
+diff_seasonality_day = difference(two_weeks['Temp'], 48)
+pyplot.plot(diff_seasonality_day)
+pyplot.show()
+
+# invert the difference
+inverted = [inverse_difference(two_weeks['Temp'][i], diff_seasonality_day[i]) for i in range(len(diff_seasonality_day))]
+pyplot.plot(inverted)
+pyplot.show()
+
+
+
+# ARIMA: AutoRegressive Integrated Moving Average.
+
+# 🎓 Stationarity. From a statistical context, stationarity refers to data whose distribution does not change when shifted in time. 
+# Non-stationary data, then, shows fluctuations due to trends that must be transformed to be analyzed. 
+# Seasonality, for example, can introduce fluctuations in data and can be eliminated by a process of 'seasonal-differencing'.
+
+# 🎓 Differencing. Differencing data, again from a statistical context, refers to the process of transforming non-stationary data 
+# to make it stationary by removing its non-constant trend. "Differencing removes the changes in the level of a time series, 
+# eliminating trend and seasonality and consequently stabilizing the mean of the time series." Paper by Shixiong et al
+
+# AR - for AutoRegressive. Autoregressive models, as the name implies, look 'back' in time to analyze previous 
+# values in your data and make assumptions about them. These previous values are called 'lags'. 
+# An example would be data that shows monthly sales of pencils. 
+# Each month's sales total would be considered an 'evolving variable' in the dataset. 
+# This model is built as the "evolving variable of interest is 
+# regressed on its own lagged (i.e., prior) values." wikipedia
+
+# I - for Integrated. As opposed to the similar 'ARMA' models, the 'I' in ARIMA refers to its integrated aspect. 
+# The data is 'integrated' when differencing steps are applied so as to eliminate non-stationarity.
+
+# MA - for Moving Average. The moving-average aspect of this model refers to the output variable that 
+# is determined by observing the current and past values of lags.
+
+from sklearn.preprocessing import MinMaxScaler
+
+train_start_dt = only_2019.index[0]
+test_start_dt = only_2019.index[int(len(only_2019) * 0.9)]
+
+only_2019[(only_2019.index < test_start_dt) & (only_2019.index >= train_start_dt)][['Temp']].rename(columns={'Temp':'train'}) \
+    .join(only_2019[test_start_dt:][['Temp']].rename(columns={'Temp':'test'}), how='outer') \
+    .plot(y=['train', 'test'], figsize=(15, 8), fontsize=12)
+plt.title("Train-test-split")
+plt.xlabel('timestamp', fontsize=12)
+plt.ylabel('Temp', fontsize=12)
+plt.show()
+
+train = only_2019.copy()[(only_2019.index >= train_start_dt) & (only_2019.index < test_start_dt)][['Temp']]
+test = only_2019.copy()[only_2019.index >= test_start_dt][['Temp']]
+
+print('Training data shape: ', train.shape)
+print('Test data shape: ', test.shape)
+
+scaler = MinMaxScaler()
+train['Temp'] = scaler.fit_transform(train)
+train.head(10)
+
+only_2019[(only_2019.index >= train_start_dt) & (only_2019.index < test_start_dt)][['Temp']].rename(columns={'Temp':'original Temp'}).plot.hist(bins=100, fontsize=12)
+train.rename(columns={'Temp':'scaled Temp'}).plot.hist(bins=100, fontsize=12)
+plt.show()
+
+test['Temp'] = scaler.transform(test)
+test.head()
+
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+# from common.utils import load_data, mape
+from IPython.display import Image
+from pandas.plotting import autocorrelation_plot
+pd.options.display.float_format = '{:,.2f}'.format
+np.set_printoptions(precision=2)
+
+
+# Define the model by calling SARIMAX() and passing in the model parameters: 
+# p, d, and q parameters, and P, D, and Q parameters.
+# Prepare the model for the training data by calling the fit() function.
+# Make predictions calling the forecast() function and specifying the number of steps (the horizon) to forecast.
+
+# 🎓 What are all these parameters for? 
+# In an ARIMA model there are 3 parameters that are used to help model the major aspects of a time series: 
+# seasonality, trend, and noise. These parameters are:
+#     p: the parameter associated with the auto-regressive aspect of the model, which incorporates past values.
+#     d: the parameter associated with the integrated part of the model, 
+#         which affects the amount of differencing (🎓 remember differencing 👆?) to apply to a time series. 
+#     q: the parameter associated with the moving-average part of the model.
+
+# Note: If your data has a seasonal aspect - which this one does - we use a seasonal ARIMA model (SARIMA). 
+# In that case you need to use another set of parameters: P, D, and Q 
+# which describe the same associations as p, d, and q, but correspond to the seasonal components of the model.
+
+# Specify the number of steps to forecast ahead
+HORIZON = 48
+print('Forecasting horizon:', HORIZON/2, 'hours')
+
+# Selecting the best values for an ARIMA model's parameters can be challenging as it's somewhat subjective and time intensive. 
+# You might consider using an auto_arima() function from the pyramid library
+
+order = (4, 1, 0) # p, d, q
+seasonal_order = (1, 1, 0, 48) # P, D, Q, s
+
+model = SARIMAX(endog=train, order=order, seasonal_order=seasonal_order)
+results = model.fit()
+
+print(results.summary())
+
+#                                      SARIMAX Results                                      
+# ==========================================================================================
+# Dep. Variable:                               Temp   No. Observations:                15632
+# Model:             SARIMAX(4, 1, 0)x(1, 1, 0, 48)   Log Likelihood               46193.325
+# Date:                            Tue, 14 Jun 2022   AIC                         -92374.650
+# Time:                                    16:50:59   BIC                         -92328.726
+# Sample:                                         0   HQIC                        -92359.442
+#                                           - 15632                                         
+# Covariance Type:                              opg                                         
+# ==============================================================================
+#                  coef    std err          z      P>|z|      [0.025      0.975]
+# ------------------------------------------------------------------------------
+# ar.L1          0.0220      0.006      3.929      0.000       0.011       0.033
+# ar.L2          0.1336      0.005     24.385      0.000       0.123       0.144
+# ar.L3          0.0130      0.006      2.352      0.019       0.002       0.024
+# ar.L4          0.0609      0.006     10.230      0.000       0.049       0.073
+# ar.S.L48      -0.4634      0.004   -111.952      0.000      -0.472      -0.455
+# sigma2         0.0002   9.17e-07    169.642      0.000       0.000       0.000
+# ===================================================================================
+# Ljung-Box (L1) (Q):                   6.35   Jarque-Bera (JB):             20711.42
+# Prob(Q):                              0.01   Prob(JB):                         0.00
+# Heteroskedasticity (H):               1.03   Skew:                            -0.04
+# Prob(H) (two-sided):                  0.23   Kurtosis:                         8.65
+# ===================================================================================
+
+# Warnings:
+# [1] Covariance matrix calculated using the outer product of gradients (complex-step).
+
+#############################
+#############################
+# Walk-forward validation is the gold standard of time series model evaluation and is recommended for your own projects.
+
+
+test_shifted = test.copy()
+
+for t in range(1, HORIZON+1):
+    test_shifted['Temp+'+str(t)] = test_shifted['Temp'].shift(-t)
+
+test_shifted = test_shifted.dropna(how='any')
+test_shifted.head(5)
+
+# Make predictions on your test data using this sliding window approach in a loop the size of the test data length:
+
+%%time
+training_window = 720 # dedicate 30 days (720 hours) for training
+# probably needs editing for my data where 48 x no. days
+
+train_ts = train['Temp']
+test_ts = test_shifted
+
+history = [x for x in train_ts]
+history = history[(-training_window):]
+
+predictions = list()
+
+order = (2, 1, 0)
+seasonal_order = (1, 1, 0, 24)
+
+for t in range(test_ts.shape[0]):
+    model = SARIMAX(endog=history, order=order, seasonal_order=seasonal_order)
+    model_fit = model.fit()
+    yhat = model_fit.forecast(steps = HORIZON)
+    predictions.append(yhat)
+    obs = list(test_ts.iloc[t])
+    # move the training window
+    history.append(obs[0])
+    history.pop(0)
+    print(test_ts.index[t])
+    print(t+1, ': predicted =', yhat, 'expected =', obs)
+
+
+# Compare the predictions to the actual load:
+
+eval_df = pd.DataFrame(predictions, columns=['t+'+str(t) for t in range(1, HORIZON+1)])
+eval_df['timestamp'] = test.index[0:len(test.index)-HORIZON+1]
+eval_df = pd.melt(eval_df, id_vars='timestamp', value_name='prediction', var_name='h')
+eval_df['actual'] = np.array(np.transpose(test_ts)).ravel()
+eval_df[['prediction', 'actual']] = scaler.inverse_transform(eval_df[['prediction', 'actual']])
+eval_df.head()
