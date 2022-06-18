@@ -410,8 +410,6 @@ inverted = [inverse_difference(two_weeks['Temp'][i], diff_seasonality_day[i]) fo
 pyplot.plot(inverted)
 pyplot.show()
 
-
-
 # ARIMA: AutoRegressive Integrated Moving Average.
 
 # 🎓 Stationarity. From a statistical context, stationarity refers to data whose distribution does not change when shifted in time. 
@@ -438,7 +436,7 @@ pyplot.show()
 from sklearn.preprocessing import MinMaxScaler
 
 train_start_dt = only_2019.index[0]
-test_start_dt = only_2019.index[int(len(only_2019) * 0.9)]
+test_start_dt = only_2019.index[int(len(only_2019) * 0.98)]
 
 only_2019[(only_2019.index < test_start_dt) & (only_2019.index >= train_start_dt)][['Temp']].rename(columns={'Temp':'train'}) \
     .join(only_2019[test_start_dt:][['Temp']].rename(columns={'Temp':'test'}), how='outer') \
@@ -548,7 +546,7 @@ test_shifted.head(5)
 
 # Make predictions on your test data using this sliding window approach in a loop the size of the test data length:
 
-%%time
+%time
 training_window = 720 # dedicate 30 days (720 hours) for training
 # probably needs editing for my data where 48 x no. days
 # this model needs optimising for number of iterations... taking too long to run or whatever.
@@ -567,6 +565,8 @@ seasonal_order = (1, 1, 0, 48) # P, D, Q, s
 # why is this the same size as the data set.
 # might be required due to 
 # ValueError: Length of values (1690) does not match length of index (446)
+# very slow
+# ValueError: Length of values (14700) does not match length of index (14400)
 for t in range(test_ts.shape[0]):
     model = SARIMAX(endog=history, order=order, seasonal_order=seasonal_order)
     model_fit = model.fit()
@@ -583,8 +583,14 @@ for t in range(test_ts.shape[0]):
 # Compare the predictions to the actual load:
 
 eval_df = pd.DataFrame(predictions, columns=['t+'+str(t) for t in range(1, HORIZON+1)])
-eval_df['timestamp'] = test.index[0:len(test.index)-HORIZON+1]
+# eval_df['timestamp'] = test.index[0:len(test.index)-HORIZON+1]
+eval_df['timestamp'] = test.index[0:len(test.index)-HORIZON]
 eval_df = pd.melt(eval_df, id_vars='timestamp', value_name='prediction', var_name='h')
-eval_df['actual'] = np.array(np.transpose(test_ts)).ravel()
+# eval_df['actual'] = np.array(np.transpose(test_ts)).ravel()
+eval_df['actual'] = np.array(np.transpose(test_ts.iloc[:, 1:])).ravel()
 eval_df[['prediction', 'actual']] = scaler.inverse_transform(eval_df[['prediction', 'actual']])
 eval_df.head()
+
+eval_df.to_csv("evaluation_df.csv")
+
+load_eval_df = pd.read_csv("evaluation_df.csv")
