@@ -10,6 +10,8 @@ seaborn = "*"
 matplotlib = "*"
 # statsmodels = {git = "https://github.com/statsmodels/statsmodels"}
 sklearn = "*"
+common-utils = "*"
+common = "*"
 
 [dev-packages]
 

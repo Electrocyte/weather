@@ -410,6 +410,15 @@ inverted = [inverse_difference(two_weeks['Temp'][i], diff_seasonality_day[i]) fo
 pyplot.plot(inverted)
 pyplot.show()
 
+
+
+
+
+
+
+
+
+
 # ARIMA: AutoRegressive Integrated Moving Average.
 
 # 🎓 Stationarity. From a statistical context, stationarity refers to data whose distribution does not change when shifted in time. 
@@ -594,3 +603,54 @@ eval_df.head()
 eval_df.to_csv("evaluation_df.csv")
 
 load_eval_df = pd.read_csv("evaluation_df.csv")
+
+eval_df = load_eval_df
+
+if(HORIZON > 1):
+    eval_df['APE'] = (eval_df['prediction'] - eval_df['actual']).abs() / eval_df['actual']
+    print(eval_df.groupby('h')['APE'].mean())
+
+# can't find this library
+# from common.utils import load_data, mape
+
+# print('One step forecast MAPE: ', (mape(eval_df[eval_df['h'] == 't+1']['prediction'], eval_df[eval_df['h'] == 't+1']['actual']))*100, '%')
+# print('Multi-step forecast MAPE: ', mape(eval_df['prediction'], eval_df['actual'])*100, '%')
+
+def mean_absolute_percentage_error(y_true, y_pred): 
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+print('One step forecast MAPE: ', (mean_absolute_percentage_error(eval_df[eval_df['h'] == 't+2']['prediction'], eval_df[eval_df['h'] == 't+2']['actual']))*100, '%')
+print('Multi-step forecast MAPE: ', mean_absolute_percentage_error(eval_df['prediction'], eval_df['actual'])*100, '%')
+
+eval_df["day"] = eval_df["timestamp"].str.split(" ", expand = True)[0]
+
+if(HORIZON == 1):
+    ## Plotting single step forecast
+    eval_df.plot(x='timestamp', y=['actual', 'prediction'], style=['r', 'b'], figsize=(15, 8))
+else:
+    ## Plotting multi step forecast
+    plot_df = eval_df[(eval_df.h=='t+1')][['timestamp', 'actual', 'day']]
+    for t in range(1, HORIZON+1):
+        plot_df['t+'+str(t)] = eval_df[(eval_df.h=='t+'+str(t))]['prediction'].values
+
+    # labels = plot_df.day
+
+    fig = plt.figure(figsize=(15, 8))
+
+    ax = fig.add_subplot(111)
+    # ax.set_xticklabels(labels)
+
+    for t in range(1, HORIZON+1):
+        x = plot_df['timestamp'][(t-1):]
+        y = plot_df['t+'+str(t)][0:len(x)]
+        ax.plot(x, y, color='blue', linewidth=4*math.pow(.9,t), alpha=math.pow(0.8,t))
+        # ax.set_xticks([])
+    ax.legend(loc='best')
+    ax = plt.plot(plot_df['timestamp'], plot_df['actual'], color='red', linewidth=2.0)
+    plt.xticks( rotation=90)
+    # plt.xticks(np.arange(min(x.index), max(x.index)+1, 20), rotation=90)
+
+plt.xlabel('day', fontsize=12)
+plt.ylabel('Temperature', fontsize=12)
+plt.show()
