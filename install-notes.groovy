@@ -1,7 +1,7 @@
 # first time setup in repo
 gh repo clone Electrocyte/weather
 cd weather
-pipenv install pandas jupyter seaborn matplotlib sklearn
+pipenv install pandas jupyter seaborn matplotlib sklearn common-utils common
 pipenv shell # activate [VE] virtual environment for jupyter notebook
 git add . 
 git commit
